@@ -79,6 +79,12 @@ int main(int argc, char** argv){
   ros::NodeHandle nh;
   updated = false;
   
+  // Set up PID's
+  double kpAtt, kvAtt, kpTraj, kvTraj
+  nh.getParam("kp_att",kpAtt);
+  nh.getParam("kv_att",kvAtt); // These may need to be matrices for an asymmetrical craft
+  nh.getParam("kp_traj",kpTraj);
+  nh.getParam("kv_traj",kvTraj);
 
   // Subscribers
   subState = nh.subscribe("/orbot/space/state/estimate",2,stateCallback);
@@ -98,6 +104,8 @@ int main(int argc, char** argv){
   ros::Rate loop_rate(100);
   bool initialized = false;
   ros::Time tStart;
+  int sequence = 0;
+  int tInd = 0;
 
   while(ros::ok()){
     while(!intialized){
@@ -155,14 +163,43 @@ int main(int argc, char** argv){
     }
     // With current state/time, figure out goal pose
     double tCurr = (ros::Time::now()-tStart).toSec();
-
+    if(tCurr > tStar(tStar.size()-1)){
+      ROS_INFO("Completed Trajectory");
+      att_srv.request.tEnd = att_srv.request.tEnd/100;
+      traj_srv.request.tEnd = traj_srv.request.tEnd/100;
+      if(att_srv.request.tEnd < 1){
+        ROS_INFO("Should have reached destination by now");
+        break;
+      }
+      initialized = false;
+      continue;
+    }
+    while(tInd+1<tStar.size() && tCurr>tStar(tInd+1)){
+      tInd++;
+    }
+    double ratio = (tCurr - tStar(tInd))/(tStar(tInd+1)-tStar(tInd));
+    Eigen::Vector3d rStar_i = ratio * (rStar.col(tInd+1) - rStar.col(tInd)) + rStar.col(tInd);
+    Eigen::Vector3d vStar_i = ratio * (vStar.col(tInd+1) - vStar.col(tInd)) + vStar.col(tInd);
+    Eigen::Vector4d qStar_i = (ratio * (qStar.col(tInd+1) - qStar.col(tInd)) + qStar.col(tInd)).noramlize(); // Note, this is suboptimal. Like, mekf level suboptimal
 
     // Use PID controller to get attitude control output
+    Eigen::Vector4d dq = quatRot(inverse(q),qStar_i);
+    Eigen::Vector3d uAtt = -kpAtt*dq.head(3) - kvAtt*w; // Assumes goal rotation rate is zero
+
     // Use PID controller to get linear control output
+    Eigen::Vector3d uTraj = -kpTraj*(rStar_i-r) - kvTraj*(vStar_i-v);
+
     // Combine the two
+    Eigen::Vector3d uOut = (uAtt + uTraj).normalize();
     // Publish them
-
-
+    geometry_msgs::Vector3Stamped controlMsg;
+    controlMsg.header.seq = sequence++;
+    controlMsg.header.stamp = ros::Time::now();
+    controlMsg.header.frame_id = 0;
+    controlMsg.vector.x = uOut(0);
+    controlMsg.vector.y = uOut(1);
+    controlMsg.vector.z = uOut(2);
+    pubControl.publish(controlMsg);
 
     ros::spinOnce();
     loop_rate.sleep();
