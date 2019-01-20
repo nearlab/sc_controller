@@ -1,0 +1,25 @@
+<package>
+  <name>sc_controller</name>
+  <version>0.0.1</version>
+  <description>
+    Controls a spacecraft using a basid PD controller and pre-generated trajectories.
+  </description>
+  <license>MIT</license>
+  <maintainer email="jtb2013@gmail.com">James Bell</maintainer>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  
+
+  <build_depend>std_msgs</build_depend>
+  <build_depend>cmake_modules</build_depend>
+  <build_depend>nearlab_msgs</build_depend>
+  <build_depend>roscpp</build_depend>
+
+  <run_depend>message_runtime</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>nearlab_msgs</run_depend>
+  <run_depend>cmake_modules</run_depend>
+  <run_depend>roscpp</run_depend>
+</package>
+
+

@@ -6,6 +6,7 @@
 
 #include "nearlab_msgs/energy_optimal_traj.h"
 #include "nearlab_msgs/attitude_traj.h"
+#include "nearlab_msgs/ControlStamped.h"
 #include "quatMath.h"
 
 Eigen::Vector3d r;
@@ -189,16 +190,19 @@ int main(int argc, char** argv){
     // Use PID controller to get linear control output
     Eigen::Vector3d uTraj = -kpTraj*(rStar_i-r) - kvTraj*(vStar_i-v);
 
-    // Combine the two
-    Eigen::Vector3d uOut = (uAtt + uTraj).normalize();
+    // TODO: Normalize these based on thrust, mass, and inertia matrix
+
     // Publish them
-    geometry_msgs::Vector3Stamped controlMsg;
+    nearlab_msgs::ControlStamped controlMsg;
     controlMsg.header.seq = sequence++;
     controlMsg.header.stamp = ros::Time::now();
     controlMsg.header.frame_id = 0;
-    controlMsg.vector.x = uOut(0);
-    controlMsg.vector.y = uOut(1);
-    controlMsg.vector.z = uOut(2);
+    controlMsg.thrust.x = uTraj(0);
+    controlMsg.thrust.y = uTraj(1);
+    controlMsg.thrust.z = uTraj(2);
+    controlMsg.torque.x = uAtt(0);
+    controlMsg.torque.y = uAtt(1);
+    controlMsg.torque.z = uAtt(2);
     pubControl.publish(controlMsg);
 
     ros::spinOnce();

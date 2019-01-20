@@ -1,0 +1,58 @@
+<launch>
+  <!-- Name of robot -->
+  <rosparam param="RobotName"> "Orbot" </rosparam>
+  <!-- Orbital Period, seconds -->
+  <rosparam param="Torb"> 5236 </rosparam>
+  <!-- Mass of spacecraft -->
+  <rosparam param="sc_mass"> 100 </rosparam>
+  <!-- Time scaling between orbit and lab frames -->
+  <rosparam param="tau"> 20 </rosparam>
+  <!-- Distance Scaling between orbit and lab frames -->
+  <rosparam param="nu"> 2 </rosparam>
+  <node pkg="robot_estimator"
+    type="dynamics_node"
+    name="dynamics_node"
+    output="screen">
+  </node>
+  
+  <node pkg="robot_estimator"
+    type="estimator_node"
+    name="estimator_node"
+    output="screen">
+    launch-prefix="gdb -ex run --args"
+  </node>
+
+  <node pkg="robot_estimator"
+    type="markers_node"
+    name="markers_node"
+    output="screen">
+  </node>
+
+  <node pkg="robot_estimator"
+    type="sc_controller_node"
+    name="sc_controller_node"
+    output="screen">
+  </node>
+  <!-- Robot motor parameter -->
+  <rosparam param="alpha"> 17 </rosparam>
+  <!-- Robot motor parameter -->
+  <rosparam param="gamma"> 78 </rosparam>
+  <!-- Mass of robot -->
+  <rosparam param="mass"> 5.9 </rosparam>
+  <!-- Radius of the robot, used in Moment of Inertia calcs -->
+  <rosparam param="radius"> .365 </rosparam>
+  <!-- Distance between wheels and CM -->
+  <rosparam param="wheelDist"> .127 </rosparam>
+
+  <node pkg="robot_estimator"
+    type="imu_sim_node"
+    name="imu_sim_node"
+    output="screen">
+  </node>
+  
+  <node pkg="orbot_client"
+     type="orbot_client"
+     name="orbot_client"
+     output="screen">
+  </node>  
+</launch>
