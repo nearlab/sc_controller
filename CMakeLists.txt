@@ -18,6 +18,7 @@ catkin_package(CATKIN_DEPENDS
   nearlab_msgs
   roscpp
   message_runtime
+  nearlab_utils
 )
 
 #########
