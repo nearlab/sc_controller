@@ -6,7 +6,8 @@
 
 #include "nearlab_msgs/energy_optimal_traj.h"
 #include "nearlab_msgs/attitude_traj.h"
-#include "nearlab_msgs/ControlStamped.h"
+#include "nearlab_msgs/StateStamped.h"
+#include <geometry_msgs/Vector3Stamped>
 #include "quatMath.h"
 
 Eigen::Vector3d r;
@@ -15,20 +16,24 @@ Eigen::Vector4d q;
 Eigen::Vector3d w;
 bool updated;
 
-void stateCallback(const nearlab_msgs::StateStamped msg){
-  for(int i=0;i<3;i++){
-    r(i) = msg.r[i];
-    v(i) = msg.v[i];
-    q(i) = msg.q[i];
-    w(i) = msg.w[i];
-  }
-  q(3) = msg.q(3);
+void stateCallback(const nearlab_msgs::StateStamped& msg){
+  r(0) = msg.r.x;
+  r(1) = msg.r.y;
+  r(2) = msg.r.z;
+  v(0) = msg.v.x;
+  v(1) = msg.v.y;
+  v(2) = msg.v.z;
+  q(0) = msg.q.x;
+  q(1) = msg.q.y;
+  q(2) = msg.q.z;
+  q(3) = msg.q.w;
+  w(0) = msg.w.x;
+  w(1) = msg.w.y;
+  w(2) = msg.w.z;
   updated = true;
 }
 
-nearlab_msgs::energy_optimal_traj setupTrajRequest(const NodeHandle& nh){
-  double dt,m,tau,nu,F,mu,r[3],v[3],R[3];
-  
+nearlab_msgs::energy_optimal_traj setupTrajRequest(const ros::NodeHandle& nh){  
   nearlab_msgs::energy_optimal_traj srv;
   // Get parameters
   nh.getParam("dt",dt);
@@ -54,8 +59,8 @@ nearlab_msgs::energy_optimal_traj setupTrajRequest(const NodeHandle& nh){
   return srv;
 }
 
-nearlab_msgs::attitude_traj setupAttrRequest(const NodeHandle& nh){
-  double dt,tf,q[4];
+nearlab_msgs::attitude_traj setupAttRequest(const ros::NodeHandle& nh){
+  double dt,q[4];
   nearlab_msgs::attitude_traj srv;
   // Get parameters
   nh.getParam("dt",dt);
@@ -81,17 +86,17 @@ int main(int argc, char** argv){
   updated = false;
   
   // Set up PID's
-  double kpAtt, kvAtt, kpTraj, kvTraj
+  double kpAtt, kvAtt, kpTraj, kvTraj;
   nh.getParam("kp_att",kpAtt);
   nh.getParam("kv_att",kvAtt); // These may need to be matrices for an asymmetrical craft
   nh.getParam("kp_traj",kpTraj);
   nh.getParam("kv_traj",kvTraj);
 
   // Subscribers
-  subState = nh.subscribe("/orbot/space/state/estimate",2,stateCallback);
+  subState = nh.subscribe("/orbot/space/state/estimate",100,stateCallback);
 
   // Publishers
-  pubControl = nh.advertise<geometry_msgs::Vector3Stamped>("/orbot/space/control"),1000);
+  pubControl = nh.advertise<geometry_msgs::Vector3Stamped>("/orbot/space/control"),100);
   
   // setup trajectory clients
   ros::ServiceClient traj_client = nh.serviceClient<nearlab_msgs::energy_optimal_traj>("/orbot/space/energy_optimal_traj");
@@ -127,9 +132,10 @@ int main(int argc, char** argv){
         ROS_INFO("Generating Trajectories");
         if(traj_client.call(traj_srv)){
           ROS_INFO("Successfully generated optimal trajectory to target location.");
-          rStar = Eigen::MatrixXd::Zero(3,traj_srv.request.intervals);
-          vStar = Eigen::MatrixXd::Zero(3,traj_srv.request.intervals);
-          tStar = Eigen::VectorXd::Zero(traj_srv.request.intervals);
+          int intervals = traj_srv.request.intervals;
+          rStar = Eigen::MatrixXd::Zero(3,intervals);
+          vStar = Eigen::MatrixXd::Zero(3,intervals);
+          tStar = Eigen::VectorXd::Zero(intervals);
           for(int i=0;i<intervals;i++){
             rStar(0,i) = traj_srv.response.rx[i];
             rStar(1,i) = traj_srv.response.ry[i];
@@ -148,10 +154,10 @@ int main(int argc, char** argv){
           vStar = Eigen::MatrixXd::Zero(3,traj_srv.request.intervals);
           tStar = Eigen::VectorXd::Zero(traj_srv.request.intervals);
           for(int i=0;i<intervals;i++){
-            qStar(0,i) = traj_srv.response.qx[i];
-            qStar(1,i) = traj_srv.response.qy[i];
-            qStar(2,i) = traj_srv.response.qz[i];
-            qStar(3,i) = traj_srv.response.qw[i];
+            qStar(0,i) = att_srv.response.qx[i];
+            qStar(1,i) = att_srv.response.qy[i];
+            qStar(2,i) = att_srv.response.qz[i];
+            qStar(3,i) = att_srv.response.qw[i];
           }
         }else{
           ROS_INFO("Error in generating trajectory to target attitude.");
@@ -196,7 +202,6 @@ int main(int argc, char** argv){
     nearlab_msgs::ControlStamped controlMsg;
     controlMsg.header.seq = sequence++;
     controlMsg.header.stamp = ros::Time::now();
-    controlMsg.header.frame_id = 0;
     controlMsg.thrust.x = uTraj(0);
     controlMsg.thrust.y = uTraj(1);
     controlMsg.thrust.z = uTraj(2);
