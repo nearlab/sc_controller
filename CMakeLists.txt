@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   nearlab_msgs
   std_msgs
   roscpp
+  nearlab_utils
 )
 
 #find_package(Eigen3 3.3 REQUIRED NO_MODULE)
