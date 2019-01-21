@@ -94,7 +94,7 @@ int main(int argc, char** argv){
   ros::Subscriber subState = nh.subscribe("/orbot/space/state/estimate",100,stateCallback);
 
   // Publishers
-  ros::Publisher pubControl = nh.advertise<geometry_msgs::Vector3Stamped>("/orbot/space/control"),100);
+  ros::Publisher pubControl = nh.advertise<geometry_msgs::Vector3Stamped>("/orbot/space/control",100);
   
   // setup trajectory clients
   ros::ServiceClient traj_client = nh.serviceClient<nearlab_msgs::energy_optimal_traj>("/orbot/space/energy_optimal_traj");
