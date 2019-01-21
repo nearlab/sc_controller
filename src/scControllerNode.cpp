@@ -7,6 +7,7 @@
 #include "nearlab_msgs/energy_optimal_traj.h"
 #include "nearlab_msgs/attitude_traj.h"
 #include "nearlab_msgs/StateStamped.h"
+#include "nearlab_msgs/ControlStamped.h"
 #include <geometry_msgs/Vector3Stamped.h>
 #include "quatMath.h"
 
@@ -35,6 +36,7 @@ void stateCallback(const nearlab_msgs::StateStamped& msg){
 
 nearlab_msgs::energy_optimal_traj setupTrajRequest(const ros::NodeHandle& nh){  
   nearlab_msgs::energy_optimal_traj srv;
+  double dt;
   // Get parameters
   nh.getParam("dt",dt);
   nh.getParam("final_time",srv.request.tEnd);
@@ -73,10 +75,6 @@ nearlab_msgs::attitude_traj setupAttRequest(const ros::NodeHandle& nh){
   srv.request.intervals = (int)round(srv.request.tEnd/dt)+1;
   srv.request.tStart = 0;
 
-  for(int i=0;i<4;i++){
-     = q[i];
-  }
-
   return srv;
 }
 
@@ -93,10 +91,10 @@ int main(int argc, char** argv){
   nh.getParam("kv_traj",kvTraj);
 
   // Subscribers
-  subState = nh.subscribe("/orbot/space/state/estimate",100,stateCallback);
+  ros::Subscriber subState = nh.subscribe("/orbot/space/state/estimate",100,stateCallback);
 
   // Publishers
-  pubControl = nh.advertise<geometry_msgs::Vector3Stamped>("/orbot/space/control"),100);
+  ros::Publisher pubControl = nh.advertise<geometry_msgs::Vector3Stamped>("/orbot/space/control"),100);
   
   // setup trajectory clients
   ros::ServiceClient traj_client = nh.serviceClient<nearlab_msgs::energy_optimal_traj>("/orbot/space/energy_optimal_traj");
@@ -114,7 +112,7 @@ int main(int argc, char** argv){
   int tInd = 0;
 
   while(ros::ok()){
-    while(!intialized){
+    while(!initialized){
       ros::spinOnce();
       
       if(updated){
@@ -151,8 +149,9 @@ int main(int argc, char** argv){
         }
         if(att_client.call(att_srv)){
           ROS_INFO("Successfully generated trajectory to target attitude.");
-          vStar = Eigen::MatrixXd::Zero(3,traj_srv.request.intervals);
-          tStar = Eigen::VectorXd::Zero(traj_srv.request.intervals);
+          int intervals = att_srv.request.intervals;
+          vStar = Eigen::MatrixXd::Zero(3,intervals);
+          tStar = Eigen::VectorXd::Zero(intervals);
           for(int i=0;i<intervals;i++){
             qStar(0,i) = att_srv.response.qx[i];
             qStar(1,i) = att_srv.response.qy[i];
@@ -187,7 +186,7 @@ int main(int argc, char** argv){
     double ratio = (tCurr - tStar(tInd))/(tStar(tInd+1)-tStar(tInd));
     Eigen::Vector3d rStar_i = ratio * (rStar.col(tInd+1) - rStar.col(tInd)) + rStar.col(tInd);
     Eigen::Vector3d vStar_i = ratio * (vStar.col(tInd+1) - vStar.col(tInd)) + vStar.col(tInd);
-    Eigen::Vector4d qStar_i = (ratio * (qStar.col(tInd+1) - qStar.col(tInd)) + qStar.col(tInd)).normalize(); // Note, this is suboptimal. Like, mekf level suboptimal
+    Eigen::Vector4d qStar_i = (ratio * (qStar.col(tInd+1) - qStar.col(tInd)) + qStar.col(tInd)).normalized(); // Note, this is suboptimal. Like, mekf level suboptimal
 
     // Use PID controller to get attitude control output
     Eigen::Vector4d dq = quatRot(inverse(q),qStar_i);
