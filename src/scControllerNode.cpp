@@ -7,7 +7,7 @@
 #include "nearlab_msgs/energy_optimal_traj.h"
 #include "nearlab_msgs/attitude_traj.h"
 #include "nearlab_msgs/StateStamped.h"
-#include <geometry_msgs/Vector3Stamped>
+#include <geometry_msgs/Vector3Stamped.h>
 #include "quatMath.h"
 
 Eigen::Vector3d r;
@@ -187,7 +187,7 @@ int main(int argc, char** argv){
     double ratio = (tCurr - tStar(tInd))/(tStar(tInd+1)-tStar(tInd));
     Eigen::Vector3d rStar_i = ratio * (rStar.col(tInd+1) - rStar.col(tInd)) + rStar.col(tInd);
     Eigen::Vector3d vStar_i = ratio * (vStar.col(tInd+1) - vStar.col(tInd)) + vStar.col(tInd);
-    Eigen::Vector4d qStar_i = (ratio * (qStar.col(tInd+1) - qStar.col(tInd)) + qStar.col(tInd)).noramlize(); // Note, this is suboptimal. Like, mekf level suboptimal
+    Eigen::Vector4d qStar_i = (ratio * (qStar.col(tInd+1) - qStar.col(tInd)) + qStar.col(tInd)).normalize(); // Note, this is suboptimal. Like, mekf level suboptimal
 
     // Use PID controller to get attitude control output
     Eigen::Vector4d dq = quatRot(inverse(q),qStar_i);
