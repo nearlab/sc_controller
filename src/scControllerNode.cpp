@@ -62,7 +62,7 @@ nearlab_msgs::energy_optimal_traj setupTrajRequest(const ros::NodeHandle& nh){
 }
 
 nearlab_msgs::attitude_traj setupAttRequest(const ros::NodeHandle& nh){
-  double dt,q[4];
+  double dt;
   nearlab_msgs::attitude_traj srv;
   // Get parameters
   nh.getParam("dt",dt);
@@ -94,7 +94,7 @@ int main(int argc, char** argv){
   ros::Subscriber subState = nh.subscribe("/orbot/space/state/estimate",100,stateCallback);
 
   // Publishers
-  ros::Publisher pubControl = nh.advertise<geometry_msgs::Vector3Stamped>("/orbot/space/control",100);
+  ros::Publisher pubControl = nh.advertise<nearlab_msgs::ControlStamped>("/orbot/space/control",100);
   
   // setup trajectory clients
   ros::ServiceClient traj_client = nh.serviceClient<nearlab_msgs::energy_optimal_traj>("/orbot/space/energy_optimal_traj");
@@ -120,11 +120,11 @@ int main(int argc, char** argv){
         ROS_INFO("Got Initial State");
         
         for(int i=0;i<3;i++){
-          traj_srv.request.rStart[i] = r[i];
-          traj_srv.request.vStart[i] = v[i];
-          att_srv.request.qStart[i] = q[i];
+          traj_srv.request.rStart[i] = r(i);
+          traj_srv.request.vStart[i] = v(i);
+          att_srv.request.qStart[i] = q(i);
         }
-        att_srv.request.qStart[3] = q[3];
+        att_srv.request.qStart[3] = q(3);
         
         // Generate trajectories
         ROS_INFO("Generating Trajectories");
