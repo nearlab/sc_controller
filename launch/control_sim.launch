@@ -16,28 +16,34 @@
   <rosparam param="orbital_radius_z"> 0.0 </rosparam>
 
   <!-- Spacecraft Moments of Inertia along principle axes -->
-  <rosparam param="sc_inertia_xx"> 2 </rosparam>
-  <rosparam param="sc_inertia_yy"> 2 </rosparam>
-  <rosparam param="sc_inertia_zz"> 2 </rosparam>
+  <rosparam param="sc_inertia_xx"> 25 </rosparam>
+  <rosparam param="sc_inertia_yy"> 25 </rosparam>
+  <rosparam param="sc_inertia_zz"> 25 </rosparam>
 
   <!-- Option to do Clohessy-Wiltshire or another style of propagation -->
   <param name="clohessy_wiltshire" type="bool" value="true"/>
 
-  <!-- Spacecraft Moments of Inertia along principle axes -->
+  <!-- Target Location for this Trajectory -->
   <rosparam param="final_radius_x"> 100 </rosparam>
   <rosparam param="final_radius_y"> 0 </rosparam>
   <rosparam param="final_radius_z"> 0 </rosparam>
 
-  <!-- Spacecraft Moments of Inertia along principle axes -->
+  <!-- Target Velocity for this Trajectory -->
   <rosparam param="final_velocity_x"> 0 </rosparam>
   <rosparam param="final_velocity_y"> 0 </rosparam>
   <rosparam param="final_velocity_z"> 0 </rosparam>
 
-  <!-- Spacecraft Moments of Inertia along principle axes -->
+  <!-- Target Relative Orientation for this Trajectory -->
   <rosparam param="final_quat_x"> 0 </rosparam>
   <rosparam param="final_quat_y"> 0 </rosparam>
   <rosparam param="final_quat_z"> 0 </rosparam>
   <rosparam param="final_quat_w"> 1 </rosparam>
+
+  <!-- PD values for linear and angular control -->
+  <rosparam param="kp_att"> 10 </rosparam>
+  <rosparam param="kv_att"> 1 </rosparam>
+  <rosparam param="kp_traj"> 10 </rosparam>
+  <rosparam param="kv_traj"> 1 </rosparam>
 
   <!-- Gravitational Parameter for Earth -->
   <rosparam param="dt"> 1 </rosparam>

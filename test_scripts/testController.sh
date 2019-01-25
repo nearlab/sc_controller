@@ -15,7 +15,7 @@ pose:
     z: 0.0
     w: 1.0"
 
-rostopic pub -1 /orbot/space/state/estimate nearlab_msgs/StateStamped "header:
+rostopic pub -1 /orbot/space/state/truth nearlab_msgs/StateStamped "header:
   seq: 0
   stamp: {secs: 0, nsecs: 0}
   frame_id: ''

@@ -91,7 +91,7 @@ int main(int argc, char** argv){
   nh.getParam("kv_traj",kvTraj);
 
   // Subscribers
-  ros::Subscriber subState = nh.subscribe("/orbot/space/state/estimate",100,stateCallback);
+  ros::Subscriber subState = nh.subscribe("/orbot/space/state/truth",100,stateCallback);
 
   // Publishers
   ros::Publisher pubControl = nh.advertise<nearlab_msgs::ControlStamped>("/orbot/space/control",100);
@@ -150,8 +150,7 @@ int main(int argc, char** argv){
         if(att_client.call(att_srv)){
           ROS_INFO("Successfully generated trajectory to target attitude.");
           int intervals = att_srv.request.intervals;
-          vStar = Eigen::MatrixXd::Zero(3,intervals);
-          tStar = Eigen::VectorXd::Zero(intervals);
+          qStar = Eigen::MatrixXd::Zero(4,intervals);
           for(int i=0;i<intervals;i++){
             qStar(0,i) = att_srv.response.qx[i];
             qStar(1,i) = att_srv.response.qy[i];
@@ -167,8 +166,10 @@ int main(int argc, char** argv){
         updated = false;
       }
     }
+    ROS_INFO("Beginning Controller");
     // With current state/time, figure out goal pose
     double tCurr = (ros::Time::now()-tStart).toSec();
+    ROS_INFO_STREAM("Current Time: "<<tCurr<<"\nFinal Time: "<<tStar(tStar.size()-1));
     if(tCurr > tStar(tStar.size()-1)){
       ROS_INFO("Completed Trajectory");
       att_srv.request.tEnd = att_srv.request.tEnd/100;
@@ -180,13 +181,16 @@ int main(int argc, char** argv){
       initialized = false;
       continue;
     }
+    ROS_INFO("Finding Current Index");
     while(tInd+1<tStar.size() && tCurr>tStar(tInd+1)){
       tInd++;
     }
-    double ratio = (tCurr - tStar(tInd))/(tStar(tInd+1)-tStar(tInd));
-    Eigen::Vector3d rStar_i = ratio * (rStar.col(tInd+1) - rStar.col(tInd)) + rStar.col(tInd);
-    Eigen::Vector3d vStar_i = ratio * (vStar.col(tInd+1) - vStar.col(tInd)) + vStar.col(tInd);
-    Eigen::Vector4d qStar_i = (ratio * (qStar.col(tInd+1) - qStar.col(tInd)) + qStar.col(tInd)).normalized(); // Note, this is suboptimal. Like, mekf level suboptimal
+    ROS_INFO("Setting Goal State");
+
+    double ratio = (tCurr - tStar(tInd-1))/(tStar(tInd)-tStar(tInd-1));
+    Eigen::Vector3d rStar_i = ratio * (rStar.col(tInd) - rStar.col(tInd-1)) + rStar.col(tInd-1);
+    Eigen::Vector3d vStar_i = ratio * (vStar.col(tInd) - vStar.col(tInd-1)) + vStar.col(tInd-1);
+    Eigen::Vector4d qStar_i = (ratio * (qStar.col(tInd) - qStar.col(tInd-1)) + qStar.col(tInd-1)).normalized(); // Note, this is suboptimal. Like, mekf level suboptimal
 
     // Use PID controller to get attitude control output
     Eigen::Vector4d dq = quatRot(inverse(q),qStar_i);
@@ -196,7 +200,7 @@ int main(int argc, char** argv){
     Eigen::Vector3d uTraj = -kpTraj*(rStar_i-r) - kvTraj*(vStar_i-v);
 
     // TODO: Normalize these based on thrust, mass, and inertia matrix
-
+    ROS_INFO("Publishing Control");
     // Publish them
     nearlab_msgs::ControlStamped controlMsg;
     controlMsg.header.seq = sequence++;
