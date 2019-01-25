@@ -1,0 +1,69 @@
+<launch>
+  <!-- Thrust of spacecraft, Newtons -->
+  <rosparam param="sc_thrust"> .1 </rosparam>
+  <!-- Mass of spacecraft -->
+  <rosparam param="sc_mass"> 100 </rosparam>
+  <!-- Time scaling between orbit and lab frames -->
+  <rosparam param="time_const"> 1 </rosparam>
+  <!-- Distance Scaling between orbit and lab frames -->
+  <rosparam param="dist_const"> 1 </rosparam>
+  <!-- Gravitational Parameter for Earth -->
+  <rosparam param="grav_param"> 398600000000000.0 </rosparam>
+
+  <!-- Orbital Radius, meters-->
+  <rosparam param="orbital_radius_x"> 42164000.0 </rosparam>
+  <rosparam param="orbital_radius_y"> 0.0 </rosparam>
+  <rosparam param="orbital_radius_z"> 0.0 </rosparam>
+
+  <!-- Spacecraft Moments of Inertia along principle axes -->
+  <rosparam param="sc_inertia_xx"> 2 </rosparam>
+  <rosparam param="sc_inertia_yy"> 2 </rosparam>
+  <rosparam param="sc_inertia_zz"> 2 </rosparam>
+
+  <!-- Option to do Clohessy-Wiltshire or another style of propagation -->
+  <param name="clohessy_wiltshire" type="bool" value="true"/>
+
+  <!-- Spacecraft Moments of Inertia along principle axes -->
+  <rosparam param="final_radius_x"> 100 </rosparam>
+  <rosparam param="final_radius_y"> 0 </rosparam>
+  <rosparam param="final_radius_z"> 0 </rosparam>
+
+  <!-- Spacecraft Moments of Inertia along principle axes -->
+  <rosparam param="final_velocity_x"> 0 </rosparam>
+  <rosparam param="final_velocity_y"> 0 </rosparam>
+  <rosparam param="final_velocity_z"> 0 </rosparam>
+
+  <!-- Spacecraft Moments of Inertia along principle axes -->
+  <rosparam param="final_quat_x"> 0 </rosparam>
+  <rosparam param="final_quat_y"> 0 </rosparam>
+  <rosparam param="final_quat_z"> 0 </rosparam>
+  <rosparam param="final_quat_w"> 1 </rosparam>
+
+  <!-- Gravitational Parameter for Earth -->
+  <rosparam param="dt"> 1 </rosparam>
+
+  <!-- Gravitational Parameter for Earth -->
+  <rosparam param="final_time"> 40000.0 </rosparam>
+
+
+
+  <node pkg="traj_gen"
+    type="traj_gen_node"
+    name="traj_gen_node"
+    output="screen">
+  </node>
+
+  <node pkg="sc_controller"
+    type="sc_controller_node"
+    name="sc_controller_node"
+    output="screen">
+  </node>
+
+  <node pkg="rel_dynamics_sim"
+    type="rel_dynamics_node"
+    name="rel_dynamics_node"
+    output="screen">
+  </node>
+  
+
+</launch>
