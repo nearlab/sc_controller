@@ -166,10 +166,11 @@ int main(int argc, char** argv){
         updated = false;
       }
     }
-    ROS_INFO("Beginning Controller");
+    if(std::isnan(r(0))){
+      break;
+    }
     // With current state/time, figure out goal pose
     double tCurr = (ros::Time::now()-tStart).toSec();
-    ROS_INFO_STREAM("Current Time: "<<tCurr<<"\nFinal Time: "<<tStar(tStar.size()-1));
     if(tCurr > tStar(tStar.size()-1)){
       ROS_INFO("Completed Trajectory");
       att_srv.request.tEnd = att_srv.request.tEnd/100;
@@ -181,26 +182,24 @@ int main(int argc, char** argv){
       initialized = false;
       continue;
     }
-    ROS_INFO("Finding Current Index");
-    while(tInd+1<tStar.size() && tCurr>tStar(tInd+1)){
+    while(tInd+1<tStar.size() && tCurr>tStar(tInd)){
       tInd++;
     }
-    ROS_INFO("Setting Goal State");
 
     double ratio = (tCurr - tStar(tInd-1))/(tStar(tInd)-tStar(tInd-1));
     Eigen::Vector3d rStar_i = ratio * (rStar.col(tInd) - rStar.col(tInd-1)) + rStar.col(tInd-1);
     Eigen::Vector3d vStar_i = ratio * (vStar.col(tInd) - vStar.col(tInd-1)) + vStar.col(tInd-1);
     Eigen::Vector4d qStar_i = (ratio * (qStar.col(tInd) - qStar.col(tInd-1)) + qStar.col(tInd-1)).normalized(); // Note, this is suboptimal. Like, mekf level suboptimal
+    
 
     // Use PID controller to get attitude control output
     Eigen::Vector4d dq = quatRot(inverse(q),qStar_i);
     Eigen::Vector3d uAtt = -kpAtt*dq.head(3) - kvAtt*w; // Assumes goal rotation rate is zero
 
     // Use PID controller to get linear control output
-    Eigen::Vector3d uTraj = -kpTraj*(rStar_i-r) - kvTraj*(vStar_i-v);
+    Eigen::Vector3d uTraj = -kpTraj*(rStar_i-r);// - kvTraj*(vStar_i-v);
+    ROS_INFO_STREAM("Time: "<<tCurr<<"\nRatio: "<<ratio<<"\ntStar(tInd): "<<tStar(tInd)<<"tStar(tInd-1)"<<tStar(tInd-1)<<"\nrStar_i: "<<rStar_i<<"\nr: "<<r<<"\ncontrol: "<<uTraj);
 
-    // TODO: Normalize these based on thrust, mass, and inertia matrix
-    ROS_INFO("Publishing Control");
     // Publish them
     nearlab_msgs::ControlStamped controlMsg;
     controlMsg.header.seq = sequence++;

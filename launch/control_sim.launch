@@ -46,17 +46,17 @@
   <rosparam param="kv_traj"> 1 </rosparam>
 
   <!-- Gravitational Parameter for Earth -->
-  <rosparam param="dt"> 1 </rosparam>
+  <rosparam param="dt"> .01 </rosparam>
 
   <!-- Gravitational Parameter for Earth -->
-  <rosparam param="final_time"> 40000.0 </rosparam>
+  <rosparam param="final_time"> 1000.0 </rosparam>
 
 
 
   <node pkg="traj_gen"
     type="traj_gen_node"
     name="traj_gen_node"
-    output="screen">
+    output="screen">  <!-- launch-prefix="gdb" -->
   </node>
 
   <node pkg="sc_controller"
